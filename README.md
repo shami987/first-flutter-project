@@ -7,7 +7,8 @@ A Flutter mobile application that allows users to browse, search, and learn abou
 - ✅ Browse all countries with flag, name, and population
 - ✅ Search countries by name
 - ✅ Add/remove countries to favorites (persisted locally)
-- ✅ View favorites in a dedicated tab
+- ✅ View favorites in a dedicated tab with capital cities
+- ✅ View detailed country information
 - ✅ Shimmer loading states
 - ✅ Error handling with retry functionality
 - ✅ Clean architecture with BLoC state management
@@ -105,6 +106,16 @@ start ms-settings:developers
 - Error state with retry button
 - Bottom navigation with Home and Favorites tabs
 
+### ✅ User Story 2: View Detailed Information About a Country
+- Tap any country to view full details
+- Separate API call for detailed data
+- Loading indicator during fetch
+- Large flag image display
+- Key Statistics: Area, Population, Region, Sub Region
+- Timezone section with chips
+- Back button navigation
+- Error state with retry option
+
 ### ✅ Additional Features
 - Search functionality
 - Persistent favorites using local storage
@@ -123,12 +134,12 @@ start ms-settings:developers
 
 ## Future Enhancements
 
-- [ ] Country detail screen with full information
 - [ ] Offline caching
 - [ ] Filter by region/subregion
 - [ ] Sort options (name, population)
 - [ ] Unit and widget tests
 - [ ] Dark mode support
+- [ ] Share country information
 
 ## Testing
 

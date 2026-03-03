@@ -3,19 +3,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/country_cubit.dart';
 import '../blocs/country_state.dart';
 import '../widgets/country_list_item.dart';
+import 'country_detail_screen.dart';
 
+/// Screen that displays user's favorite countries
+/// Filters the main country list to show only favorited items
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Listen to state changes from CountryCubit
     return BlocBuilder<CountryCubit, CountryState>(
       builder: (context, state) {
+        // Only show favorites when data is loaded
         if (state is CountryLoaded) {
+          // Filter countries to only include those in favorites set
           final favoriteCountries = state.countries
               .where((country) => state.favorites.contains(country.cca2))
               .toList();
 
+          // Empty state: No favorites added yet
           if (favoriteCountries.isEmpty) {
             return Center(
               child: Column(
@@ -37,23 +44,37 @@ class FavoritesScreen extends StatelessWidget {
             );
           }
 
+          // Display list of favorite countries
           return ListView.builder(
             itemCount: favoriteCountries.length,
             itemBuilder: (context, index) {
               final country = favoriteCountries[index];
               return CountryListItem(
                 country: country,
-                isFavorite: true,
+                isFavorite: true, // All items here are favorites
+                showCapital: true, // Show capital instead of population
                 onTap: () {
-                  // Navigate to details screen (to be implemented)
+                  // Navigate to detail screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CountryDetailScreen(
+                        countryCode: country.cca2,
+                        countryName: country.name,
+                      ),
+                    ),
+                  );
                 },
                 onFavoriteToggle: () {
+                  // Remove from favorites when heart icon tapped
                   context.read<CountryCubit>().toggleFavorite(country.cca2);
                 },
               );
             },
           );
         }
+        
+        // Return empty widget if state is not loaded
         return const SizedBox();
       },
     );

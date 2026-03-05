@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   builder: (context, state) {
                     final selectedSort = state is CountryLoaded
                         ? state.sortOption
-                        : CountrySortOption.name;
+                        : CountrySortOption.none;
 
                     return PopupMenuButton<CountrySortOption>(
                       icon: const Icon(Icons.sort),
@@ -69,6 +69,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         context.read<CountryCubit>().setSortOption(option);
                       },
                       itemBuilder: (context) => const [
+                        PopupMenuItem(
+                          value: CountrySortOption.none,
+                          child: Text('No sorting'),
+                        ),
                         PopupMenuItem(
                           value: CountrySortOption.name,
                           child: Text('Sort by name'),

@@ -8,14 +8,16 @@ class CountryListShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return ListView.builder(
       itemCount: 10, // Show 10 placeholder items
       itemBuilder: (context, index) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,      // Base color for shimmer
-            highlightColor: Colors.grey[100]!, // Highlight color for shimmer effect
+            baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+            highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
             child: Row(
               children: [
                 // Placeholder for flag image

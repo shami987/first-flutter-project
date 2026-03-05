@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/country_cubit.dart';
 import '../blocs/country_state.dart';
+import '../blocs/theme_cubit.dart';
 import '../widgets/country_list_item.dart';
 import '../widgets/country_list_shimmer.dart';
 import 'favorites_screen.dart';
@@ -16,62 +18,90 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Track which tab is selected (0 = Home, 1 = Favorites)
   int _selectedIndex = 0;
-  
-  // Controller for search text field
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    // Load countries when screen first appears
     context.read<CountryCubit>().loadCountries();
   }
 
   @override
   void dispose() {
-    // Clean up controller to prevent memory leaks
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
-  /// Called when user types in search field
   void _onSearch(String query) {
-    context.read<CountryCubit>().searchCountries(query);
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      context.read<CountryCubit>().searchCountries(query);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      
-      // Show different AppBar based on selected tab
       appBar: _selectedIndex == 0
           ? AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0,
               title: const Text(
                 'Countries',
                 style: TextStyle(
-                  color: Colors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              // Search bar below title (only on Home tab)
+              actions: [
+                BlocBuilder<CountryCubit, CountryState>(
+                  builder: (context, state) {
+                    final selectedSort = state is CountryLoaded
+                        ? state.sortOption
+                        : CountrySortOption.name;
+
+                    return PopupMenuButton<CountrySortOption>(
+                      icon: const Icon(Icons.sort),
+                      tooltip: 'Sort countries',
+                      initialValue: selectedSort,
+                      onSelected: (option) {
+                        context.read<CountryCubit>().setSortOption(option);
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(
+                          value: CountrySortOption.name,
+                          child: Text('Sort by name'),
+                        ),
+                        PopupMenuItem(
+                          value: CountrySortOption.population,
+                          child: Text('Sort by population'),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                BlocBuilder<ThemeCubit, ThemeMode>(
+                  builder: (context, themeMode) {
+                    return IconButton(
+                      icon: Icon(context.read<ThemeCubit>().themeIcon),
+                      onPressed: () => context.read<ThemeCubit>().toggleTheme(),
+                    );
+                  },
+                ),
+              ],
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(60),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: TextField(
                     controller: _searchController,
-                    onChanged: _onSearch, // Trigger search on each keystroke
+                    onChanged: _onSearch,
                     decoration: InputDecoration(
                       hintText: 'Search for a country',
-                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      prefixIcon: const Icon(Icons.search),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Theme.of(context).colorScheme.surfaceVariant,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
@@ -83,26 +113,30 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           : AppBar(
-              // Simple AppBar for Favorites tab
-              backgroundColor: Colors.white,
-              elevation: 0,
               title: const Text(
                 'Favorites',
                 style: TextStyle(
-                  color: Colors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              actions: [
+                BlocBuilder<ThemeCubit, ThemeMode>(
+                  builder: (context, themeMode) {
+                    return IconButton(
+                      icon: Icon(context.read<ThemeCubit>().themeIcon),
+                      onPressed: () => context.read<ThemeCubit>().toggleTheme(),
+                    );
+                  },
+                ),
+              ],
             ),
       
-      // Show different content based on selected tab
       body: _selectedIndex == 0 ? _buildHomeContent() : const FavoritesScreen(),
       
-      // Bottom navigation bar
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index), // Switch tabs
+        onTap: (index) => setState(() => _selectedIndex = index),
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         items: const [
@@ -119,79 +153,85 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Builds the home tab content based on current state
   Widget _buildHomeContent() {
     return BlocBuilder<CountryCubit, CountryState>(
       builder: (context, state) {
-        // LOADING STATE: Show shimmer skeleton
         if (state is CountryLoading) {
           return const CountryListShimmer();
         } 
         
-        // SUCCESS STATE: Show country list
         else if (state is CountryLoaded) {
-          // Empty state: No countries found (search returned nothing)
           if (state.countries.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.search_off, 
+                    size: 64, 
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'No countries found',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 18, 
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
             );
           }
           
-          // Display list of countries
-          return ListView.builder(
-            itemCount: state.countries.length,
-            itemBuilder: (context, index) {
-              final country = state.countries[index];
-              return CountryListItem(
-                country: country,
-                // Check if this country is in favorites
-                isFavorite: state.favorites.contains(country.cca2),
-                onTap: () {
-                  // Navigate to detail screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CountryDetailScreen(
-                        countryCode: country.cca2,
-                        countryName: country.name,
-                      ),
-                    ),
-                  );
-                },
-                onFavoriteToggle: () {
-                  // Toggle favorite status when heart icon tapped
-                  context.read<CountryCubit>().toggleFavorite(country.cca2);
-                },
-              );
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<CountryCubit>().loadCountries();
             },
+            child: ListView.builder(
+              itemCount: state.countries.length,
+              itemBuilder: (context, index) {
+                final country = state.countries[index];
+                return CountryListItem(
+                  country: country,
+                  isFavorite: state.favorites.contains(country.cca2),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CountryDetailScreen(
+                          countryCode: country.cca2,
+                          countryName: country.name,
+                        ),
+                      ),
+                    );
+                  },
+                  onFavoriteToggle: () {
+                    context.read<CountryCubit>().toggleFavorite(country.cca2);
+                  },
+                );
+              },
+            ),
           );
         } 
         
-        // ERROR STATE: Show error message with retry button
         else if (state is CountryError) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                Icon(
+                  Icons.error_outline, 
+                  size: 64, 
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 const SizedBox(height: 16),
                 Text(
-                  state.message, // Display error message from state
+                  state.message,
                   style: const TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                // Retry button to reload countries
                 ElevatedButton(
                   onPressed: () => context.read<CountryCubit>().loadCountries(),
                   child: const Text('Retry'),
@@ -201,7 +241,6 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
         
-        // Default: Empty widget (should never reach here)
         return const SizedBox();
       },
     );

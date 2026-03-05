@@ -28,16 +28,26 @@ class FavoritesScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.favorite_border, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.favorite_border, 
+                    size: 64, 
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'No favorites yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 18, 
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Add countries to your favorites',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                    style: TextStyle(
+                      fontSize: 14, 
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                 ],
               ),

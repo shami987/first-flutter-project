@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../data/repositories/country_repository.dart';
+import '../models/country_summary.dart';
 import 'country_state.dart';
 
 /// Cubit for managing country list state and business logic
@@ -7,6 +8,9 @@ import 'country_state.dart';
 class CountryCubit extends Cubit<CountryState> {
   // Repository for data operations
   final CountryRepository _repository;
+  List<CountrySummary> _allCountries = [];
+  String _searchQuery = '';
+  CountrySortOption _sortOption = CountrySortOption.name;
 
   // Constructor: Starts with CountryInitial state
   CountryCubit(this._repository) : super(CountryInitial());
@@ -19,13 +23,19 @@ class CountryCubit extends Cubit<CountryState> {
     
     try {
       // Fetch countries from API
-      final countries = await _repository.getAllCountries();
+      _allCountries = await _repository.getAllCountries();
       
       // Load favorites from local storage
       final favorites = await _repository.getFavorites();
       
       // Emit success state with data
-      emit(CountryLoaded(countries, favorites));
+      emit(
+        CountryLoaded(
+          _buildCountryList(),
+          favorites,
+          sortOption: _sortOption,
+        ),
+      );
     } catch (e) {
       // Emit error state with user-friendly message
       emit(CountryError('Failed to load countries. Please try again.'));
@@ -36,27 +46,42 @@ class CountryCubit extends Cubit<CountryState> {
   /// Parameters: query - The search term entered by user
   /// Emits: CountryLoading -> CountryLoaded or CountryError
   Future<void> searchCountries(String query) async {
-    // If search is empty, reload all countries
-    if (query.isEmpty) {
-      loadCountries();
+    _searchQuery = query.trim();
+
+    if (_allCountries.isEmpty) {
+      await loadCountries();
       return;
     }
-    
-    // Emit loading state
-    emit(CountryLoading());
-    
-    try {
-      // Search countries via API
-      final countries = await _repository.searchCountries(query);
-      
-      // Load favorites
-      final favorites = await _repository.getFavorites();
-      
-      // Emit success state with search results
-      emit(CountryLoaded(countries, favorites));
-    } catch (e) {
-      // Emit error state for no results
-      emit(CountryError('No countries found. Try a different search.'));
+
+    final currentState = state;
+    if (currentState is CountryLoaded) {
+      emit(
+        CountryLoaded(
+          _buildCountryList(),
+          currentState.favorites,
+          sortOption: _sortOption,
+        ),
+      );
+    }
+  }
+
+  Future<void> setSortOption(CountrySortOption option) async {
+    _sortOption = option;
+
+    if (_allCountries.isEmpty) {
+      await loadCountries();
+      return;
+    }
+
+    final currentState = state;
+    if (currentState is CountryLoaded) {
+      emit(
+        CountryLoaded(
+          _buildCountryList(),
+          currentState.favorites,
+          sortOption: _sortOption,
+        ),
+      );
     }
   }
 
@@ -77,7 +102,28 @@ class CountryCubit extends Cubit<CountryState> {
       
       // Emit updated state with same countries but new favorites
       // This triggers UI rebuild to show/hide heart icon
-      emit(CountryLoaded(currentState.countries, favorites));
+      emit(
+        CountryLoaded(
+          currentState.countries,
+          favorites,
+          sortOption: _sortOption,
+        ),
+      );
     }
+  }
+
+  List<CountrySummary> _buildCountryList() {
+    final query = _searchQuery.toLowerCase();
+    final filtered = _allCountries
+        .where((country) => country.name.toLowerCase().contains(query))
+        .toList();
+
+    if (_sortOption == CountrySortOption.name) {
+      filtered.sort((a, b) => a.name.compareTo(b.name));
+    } else {
+      filtered.sort((a, b) => b.population.compareTo(a.population));
+    }
+
+    return filtered;
   }
 }

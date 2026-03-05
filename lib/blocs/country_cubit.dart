@@ -28,6 +28,9 @@ class CountryCubit extends Cubit<CountryState> {
       // Load favorites from local storage
       final favorites = await _repository.getFavorites();
       
+      // Reset sort option to none when loading
+      _sortOption = CountrySortOption.none;
+      
       // Emit success state with data
       emit(
         CountryLoaded(
@@ -120,9 +123,10 @@ class CountryCubit extends Cubit<CountryState> {
 
     if (_sortOption == CountrySortOption.name) {
       filtered.sort((a, b) => a.name.compareTo(b.name));
-    } else {
+    } else if (_sortOption == CountrySortOption.population) {
       filtered.sort((a, b) => b.population.compareTo(a.population));
     }
+    // If _sortOption is none, don't sort - keep original order
 
     return filtered;
   }

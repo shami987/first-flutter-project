@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../models/country_summary.dart';
 
-enum CountrySortOption { name, population }
+enum CountrySortOption { none, name, population }
 
 /// Base class for all country-related states
 /// Uses Equatable for efficient state comparison in BLoC
@@ -28,7 +28,7 @@ class CountryLoaded extends CountryState {
   CountryLoaded(
     this.countries,
     this.favorites, {
-    this.sortOption = CountrySortOption.name,
+    this.sortOption = CountrySortOption.none,
   });
 
   /// Include both fields in equality comparison

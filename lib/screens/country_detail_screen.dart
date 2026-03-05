@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/country_detail_cubit.dart';
 import '../blocs/country_detail_state.dart';
+import '../service_locator.dart';
 import '../data/repositories/country_repository.dart';
 import '../utils/format_utils.dart';
 
@@ -19,23 +20,18 @@ class CountryDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      // Create new Cubit instance for this screen
       create: (context) => CountryDetailCubit(
-        context.read<CountryRepository>(),
+        getIt<CountryRepository>(),
       )..loadCountryDetails(countryCode),
       child: Scaffold(
-        backgroundColor: Colors.white,
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             countryName,
             style: const TextStyle(
-              color: Colors.black,
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
@@ -58,18 +54,21 @@ class CountryDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Large flag image
-                    Container(
-                      width: double.infinity,
-                      height: 240,
-                      color: const Color(0xFF7FB5A5),
-                      child: Image.network(
-                        country.flag,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.flag,
-                          size: 80,
-                          color: Colors.white,
+                    // Large flag image with Hero animation
+                    Hero(
+                      tag: 'flag_${countryCode}',
+                      child: Container(
+                        width: double.infinity,
+                        height: 240,
+                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        child: Image.network(
+                          country.flag,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Icon(
+                            Icons.flag,
+                            size: 80,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ),
@@ -93,6 +92,7 @@ class CountryDetailScreen extends StatelessWidget {
                           
                           // Area
                           _buildStatRow(
+                            context,
                             'Area',
                             '${country.area.toStringAsFixed(0)} sq km',
                           ),
@@ -100,17 +100,18 @@ class CountryDetailScreen extends StatelessWidget {
                           
                           // Population
                           _buildStatRow(
+                            context,
                             'Population',
                             FormatUtils.formatPopulation(country.population),
                           ),
                           const SizedBox(height: 12),
                           
                           // Region
-                          _buildStatRow('Region', country.region),
+                          _buildStatRow(context, 'Region', country.region),
                           const SizedBox(height: 12),
                           
                           // Sub Region
-                          _buildStatRow('Sub Region', country.subregion),
+                          _buildStatRow(context, 'Sub Region', country.subregion),
                           
                           const SizedBox(height: 32),
                           
@@ -135,7 +136,7 @@ class CountryDetailScreen extends StatelessWidget {
                                   vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[100],
+                                  color: Theme.of(context).colorScheme.surfaceVariant,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -163,7 +164,11 @@ class CountryDetailScreen extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                      Icon(
+                        Icons.error_outline, 
+                        size: 64, 
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         state.message,
@@ -191,7 +196,7 @@ class CountryDetailScreen extends StatelessWidget {
   }
 
   /// Builds a statistic row with label and value
-  Widget _buildStatRow(String label, String value) {
+  Widget _buildStatRow(BuildContext context, String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -199,7 +204,7 @@ class CountryDetailScreen extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         Text(

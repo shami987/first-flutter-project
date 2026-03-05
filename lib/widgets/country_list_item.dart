@@ -28,20 +28,23 @@ class CountryListItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Country flag image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4), // Rounded corners
-              child: Image.network(
-                country.flag,
-                width: 56,
-                height: 40,
-                fit: BoxFit.cover, // Fill the box while maintaining aspect ratio
-                // Error handler: Show placeholder if image fails to load
-                errorBuilder: (_, __, ___) => Container(
+            // Country flag image with Hero animation
+            Hero(
+              tag: 'flag_${country.cca2}',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4), // Rounded corners
+                child: Image.network(
+                  country.flag,
                   width: 56,
                   height: 40,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.flag, size: 20),
+                  fit: BoxFit.cover, // Fill the box while maintaining aspect ratio
+                  // Error handler: Show placeholder if image fails to load
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 56,
+                    height: 40,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.flag, size: 20),
+                  ),
                 ),
               ),
             ),
